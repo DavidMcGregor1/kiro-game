@@ -404,7 +404,7 @@ GameScene.prototype.create = function() {
     // Woman sprite at top center
     this.woman = this.add.image(400, 40, 'woman').setScale(1.3);
     // Name tag text that follows her
-    this.womanLabel = this.add.text(400, 75, 'test', {
+    this.womanLabel = this.add.text(400, 75, 'Angela & Pranjal', {
       fontSize: '12px',
       fontFamily: 'monospace',
       color: '#ff0000',
