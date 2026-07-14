@@ -465,6 +465,25 @@ GameScene.prototype.create = function() {
     color: '#667788'
   });
 
+  // Skip level button
+  const skipBtn = this.add.text(784, 16, '[ SKIP >> ]', {
+    fontSize: '14px',
+    fontFamily: 'monospace',
+    color: '#ffcc00',
+    backgroundColor: '#333333',
+    padding: { x: 6, y: 4 }
+  }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+
+  skipBtn.on('pointerover', () => skipBtn.setColor('#ffffff'));
+  skipBtn.on('pointerout', () => skipBtn.setColor('#ffcc00'));
+  skipBtn.on('pointerdown', () => {
+    if (!this.isGameOver) {
+      this.isGameOver = true;
+      this.registry.set('currentLevel', this.currentLevel + 1);
+      this.scene.start('LevelCompleteScene');
+    }
+  });
+
   // Flag glow effect
   this.tweens.add({
     targets: this.flag,
