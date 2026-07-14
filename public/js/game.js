@@ -234,6 +234,10 @@ NameEntryScene.prototype.create = function() {
   const { width, height } = this.cameras.main;
   this.cameras.main.setBackgroundColor('#1a1a2e');
 
+  // Remove all key captures so typing works in the input
+  this.input.keyboard.removeAllKeys(true);
+  this.input.keyboard.enabled = true;
+
   this.add.text(width / 2, 80, 'KIRO - ROUTE TO PROD', {
     fontSize: '42px',
     fontFamily: 'monospace',
@@ -848,6 +852,15 @@ GameScene.prototype.create = function() {
   }).setOrigin(0.5);
 
   if (this.socket) {
+    // Remove old listeners to prevent duplicates on scene restart
+    this.socket.off('currentPlayers');
+    this.socket.off('playerJoined');
+    this.socket.off('playerMoved');
+    this.socket.off('playerDied');
+    this.socket.off('playerRestarted');
+    this.socket.off('playerLeft');
+    this.socket.off('playerLevelChanged');
+
     // Receive current players already in the game
     this.socket.on('currentPlayers', (players) => {
       Object.values(players).forEach(p => {
