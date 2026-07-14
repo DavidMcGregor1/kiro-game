@@ -596,7 +596,7 @@ GameScene.prototype.create = function() {
 
   // Checkpoint (server backup power-up)
   this.checkpointActivated = false;
-  this.respawnPoint = { x: levelData.playerStart.x, y: levelData.playerStart.y };
+  this.levelStartPoint = { x: levelData.playerStart.x, y: levelData.playerStart.y };
   if (levelData.checkpoint) {
     this.checkpointSprite = this.physics.add.staticSprite(levelData.checkpoint.x, levelData.checkpoint.y - 20, 'checkpoint');
     this.checkpointLabel = this.add.text(levelData.checkpoint.x, levelData.checkpoint.y - 48, '💾 SERVER BACKUP', {
@@ -984,9 +984,9 @@ GameScene.prototype.hitBug = function(player, bug) {
   if (this.isGameOver) return;
 
   if (this.checkpointActivated) {
-    // Respawn at checkpoint instead of game over
+    // Respawn at start of level instead of game over
     this.cameras.main.shake(200, 0.015);
-    player.setPosition(this.respawnPoint.x, this.respawnPoint.y);
+    player.setPosition(this.levelStartPoint.x, this.levelStartPoint.y);
     player.setVelocity(0, 0);
     // Brief invincibility flash
     this.isGameOver = true;
@@ -997,10 +997,6 @@ GameScene.prototype.hitBug = function(player, bug) {
     });
     // Checkpoint used up
     this.checkpointActivated = false;
-    if (this.checkpointLabel) {
-      this.checkpointLabel.setText('💾 USED');
-      this.checkpointLabel.setColor('#666666');
-    }
     return;
   }
 
@@ -1024,16 +1020,30 @@ GameScene.prototype.hitBug = function(player, bug) {
 GameScene.prototype.activateCheckpoint = function(player, checkpoint) {
   if (this.checkpointActivated) return;
   this.checkpointActivated = true;
-  this.respawnPoint = { x: checkpoint.x, y: checkpoint.y };
 
-  // Visual feedback
-  checkpoint.setTint(0x00ff00);
+  // Remove the sprite and label
   this.tweens.killTweensOf(checkpoint);
-  checkpoint.setAlpha(1);
+  checkpoint.destroy();
   if (this.checkpointLabel) {
-    this.checkpointLabel.setText('✅ SAVED!');
-    this.checkpointLabel.setColor('#00ff00');
+    this.checkpointLabel.destroy();
   }
+
+  // Show SAVED popup that fades out
+  const savedText = this.add.text(player.x, player.y - 50, '✅ SAVED!', {
+    fontSize: '16px',
+    fontFamily: 'monospace',
+    color: '#00ff00',
+    fontStyle: 'bold'
+  }).setOrigin(0.5);
+
+  this.tweens.add({
+    targets: savedText,
+    y: savedText.y - 40,
+    alpha: 0,
+    duration: 1500,
+    onComplete: () => savedText.destroy()
+  });
+
   this.cameras.main.flash(200, 0, 170, 255);
 };
 
