@@ -113,5 +113,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Kiro Bug Dodge server running on port ${PORT}`);
+  console.log(`KIRO - Route To Prod server running on port ${PORT}`);
 });

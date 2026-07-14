@@ -1,4 +1,4 @@
-// Kiro Bug Dodge - Level-Based Platformer
+// KIRO - Route To Prod
 // Reach the end of each level without getting hit!
 
 const config = {
@@ -224,7 +224,7 @@ NameEntryScene.prototype.create = function() {
   const { width, height } = this.cameras.main;
   this.cameras.main.setBackgroundColor('#1a1a2e');
 
-  this.add.text(width / 2, 80, 'KIRO BUG DODGE', {
+  this.add.text(width / 2, 80, 'KIRO - ROUTE TO PROD', {
     fontSize: '42px',
     fontFamily: 'monospace',
     color: '#9b59b6',
@@ -360,7 +360,7 @@ MenuScene.prototype.create = function() {
   const { width, height } = this.cameras.main;
   this.cameras.main.setBackgroundColor('#1a1a2e');
 
-  this.add.text(width / 2, 60, 'KIRO BUG DODGE', {
+  this.add.text(width / 2, 60, 'KIRO - ROUTE TO PROD', {
     fontSize: '42px',
     fontFamily: 'monospace',
     color: '#9b59b6',
@@ -519,7 +519,7 @@ const LEVELS = [
       { x: 550, y: 330, vx: 30, vy: 0, bounceX: true, rangeX: [480, 620] },
       { x: 450, y: 270, vx: 0, vy: 30, bounceY: true, rangeY: [240, 310] }
     ],
-    checkpoint: { x: 450, y: 280 },
+    checkpoint: { x: 350, y: 390 },
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 730, y: 265 }
   },
@@ -599,7 +599,7 @@ GameScene.prototype.create = function() {
   this.respawnPoint = { x: levelData.playerStart.x, y: levelData.playerStart.y };
   if (levelData.checkpoint) {
     this.checkpointSprite = this.physics.add.staticSprite(levelData.checkpoint.x, levelData.checkpoint.y - 20, 'checkpoint');
-    this.checkpointLabel = this.add.text(levelData.checkpoint.x, levelData.checkpoint.y - 48, '💾 BACKUP', {
+    this.checkpointLabel = this.add.text(levelData.checkpoint.x, levelData.checkpoint.y - 48, '💾 SERVER BACKUP', {
       fontSize: '10px',
       fontFamily: 'monospace',
       color: '#00aaff',
