@@ -984,7 +984,7 @@ GameScene.prototype.hitBug = function(player, bug) {
   if (this.isGameOver) return;
 
   if (this.checkpointActivated) {
-    // Respawn at start of level instead of game over
+    // Respawn at start of level - infinite retries
     this.cameras.main.shake(200, 0.015);
     player.setPosition(this.levelStartPoint.x, this.levelStartPoint.y);
     player.setVelocity(0, 0);
@@ -995,8 +995,6 @@ GameScene.prototype.hitBug = function(player, bug) {
       player.setAlpha(1);
       this.isGameOver = false;
     });
-    // Checkpoint used up
-    this.checkpointActivated = false;
     return;
   }
 
