@@ -173,30 +173,74 @@ NameEntryScene.prototype.create = function() {
   const { width, height } = this.cameras.main;
   this.cameras.main.setBackgroundColor('#1a1a2e');
 
-  this.add.text(width / 2, 120, 'KIRO BUG DODGE', {
+  this.add.text(width / 2, 80, 'KIRO BUG DODGE', {
     fontSize: '42px',
     fontFamily: 'monospace',
     color: '#9b59b6',
     fontStyle: 'bold'
   }).setOrigin(0.5);
 
-  this.add.image(width / 2, 220, 'kiro').setScale(2.5);
+  // Ghost preview (will change color)
+  this.ghostPreview = this.add.image(width / 2, 180, 'kiro').setScale(2.2);
 
-  this.add.text(width / 2, 310, 'Enter your name:', {
-    fontSize: '20px',
+  this.add.text(width / 2, 250, 'Enter your name:', {
+    fontSize: '18px',
     fontFamily: 'monospace',
     color: '#aaaacc'
   }).setOrigin(0.5);
 
-  // Name input box (using DOM element)
-  const inputElement = this.add.dom(width / 2, 370).createFromHTML(
+  // Name input box
+  this.add.dom(width / 2, 290).createFromHTML(
     '<input type="text" id="nameInput" maxlength="15" placeholder="Your name..." ' +
-    'style="font-size:20px; padding:10px 20px; border:2px solid #9b59b6; ' +
+    'style="font-size:18px; padding:8px 16px; border:2px solid #9b59b6; ' +
     'border-radius:6px; background:#2a2a4e; color:#ffffff; text-align:center; ' +
-    'font-family:monospace; outline:none; width:250px;">'
+    'font-family:monospace; outline:none; width:240px;">'
   );
 
-  const goText = this.add.text(width / 2, 450, '[ PRESS ENTER TO PLAY ]', {
+  // Color picker
+  this.add.text(width / 2, 340, 'Choose ghost colour:', {
+    fontSize: '18px',
+    fontFamily: 'monospace',
+    color: '#aaaacc'
+  }).setOrigin(0.5);
+
+  const colors = [
+    { name: 'Purple', hex: 0x9b59b6 },
+    { name: 'Teal', hex: 0x00d4aa },
+    { name: 'Blue', hex: 0x3498db },
+    { name: 'Pink', hex: 0xe91e8a },
+    { name: 'Orange', hex: 0xf39c12 },
+    { name: 'Red', hex: 0xe74c3c },
+    { name: 'Green', hex: 0x2ecc71 },
+    { name: 'Yellow', hex: 0xf1c40f }
+  ];
+
+  this.selectedColor = 0x9b59b6;
+  const startX = width / 2 - (colors.length * 44) / 2 + 22;
+
+  colors.forEach((c, i) => {
+    const swatch = this.add.circle(startX + i * 44, 390, 16, c.hex)
+      .setInteractive({ useHandCursor: true })
+      .setStrokeStyle(3, 0x333333);
+
+    swatch.on('pointerdown', () => {
+      this.selectedColor = c.hex;
+      this.ghostPreview.setTint(c.hex);
+      // Reset all borders, highlight selected
+      colors.forEach((_, j) => {
+        const otherSwatch = this.children.list.filter(
+          child => child.type === 'Arc'
+        )[j];
+        if (otherSwatch) otherSwatch.setStrokeStyle(3, 0x333333);
+      });
+      swatch.setStrokeStyle(3, 0xffffff);
+    });
+
+    // Default selection highlight for purple
+    if (i === 0) swatch.setStrokeStyle(3, 0xffffff);
+  });
+
+  const goText = this.add.text(width / 2, 460, '[ PRESS ENTER TO PLAY ]', {
     fontSize: '20px',
     fontFamily: 'monospace',
     color: '#00ffcc',
@@ -222,11 +266,12 @@ NameEntryScene.prototype.create = function() {
     const input = document.getElementById('nameInput');
     const name = (input && input.value.trim()) || 'Ghost';
     this.registry.set('playerName', name);
+    this.registry.set('playerColor', this.selectedColor);
 
     // Connect to Socket.io
     const socket = io();
     this.registry.set('socket', socket);
-    socket.emit('playerJoin', name);
+    socket.emit('playerJoin', { name: name, color: this.selectedColor });
 
     this.scene.start('MenuScene');
   });
@@ -588,14 +633,19 @@ GameScene.prototype.create = function() {
   // --- MULTIPLAYER SETUP ---
   this.otherPlayers = {};
   this.playerName = this.registry.get('playerName') || 'Ghost';
+  this.playerColor = this.registry.get('playerColor') || 0x9b59b6;
   this.socket = this.registry.get('socket');
 
+  // Tint player ghost with chosen color
+  this.player.setTint(this.playerColor);
+
   // Show own name above player
+  const colorHex = '#' + this.playerColor.toString(16).padStart(6, '0');
   this.playerLabel = this.add.text(this.player.x, this.player.y - 30, this.playerName, {
     fontSize: '12px',
     fontFamily: 'monospace',
     color: '#ffffff',
-    backgroundColor: '#9b59b6',
+    backgroundColor: colorHex,
     padding: { x: 4, y: 2 }
   }).setOrigin(0.5);
 
@@ -670,11 +720,13 @@ GameScene.prototype.create = function() {
 GameScene.prototype.addOtherPlayer = function(p) {
   if (this.otherPlayers[p.id]) return;
   const sprite = this.add.image(p.x, p.y, 'kiro').setAlpha(0.6).setFlipX(p.flipX);
+  if (p.color) sprite.setTint(p.color);
+  const colorHex = p.color ? '#' + p.color.toString(16).padStart(6, '0') : '#555577';
   const label = this.add.text(p.x, p.y - 30, p.name, {
     fontSize: '11px',
     fontFamily: 'monospace',
     color: '#ffffff',
-    backgroundColor: '#555577',
+    backgroundColor: colorHex,
     padding: { x: 3, y: 1 }
   }).setOrigin(0.5).setAlpha(0.8);
   this.otherPlayers[p.id] = { sprite, label };

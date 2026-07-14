@@ -17,10 +17,13 @@ io.on('connection', (socket) => {
   console.log('Player connected:', socket.id);
 
   // Player joins with a name
-  socket.on('playerJoin', (name) => {
+  socket.on('playerJoin', (data) => {
+    const name = (typeof data === 'string') ? data : (data.name || 'Ghost');
+    const color = (typeof data === 'object') ? (data.color || 0x9b59b6) : 0x9b59b6;
     players[socket.id] = {
       id: socket.id,
-      name: name || 'Ghost',
+      name: name,
+      color: color,
       x: 60,
       y: 520,
       level: 1,
