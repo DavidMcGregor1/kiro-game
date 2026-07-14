@@ -106,6 +106,56 @@ BootScene.prototype.create = function() {
   flagGraphics.generateTexture('flag', 34, 50);
   flagGraphics.destroy();
 
+  // Woman sprite ("test") - dark hair, name tag
+  const womanGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+  // Body/dress
+  womanGraphics.fillStyle(0x2255aa, 1);
+  womanGraphics.fillTriangle(20, 28, 8, 60, 32, 60);
+  // Arms
+  womanGraphics.lineStyle(3, 0xf5c6a0, 1);
+  womanGraphics.lineBetween(12, 34, 4, 48);
+  womanGraphics.lineBetween(28, 34, 36, 48);
+  // Head
+  womanGraphics.fillStyle(0xf5c6a0, 1);
+  womanGraphics.fillCircle(20, 16, 12);
+  // Dark hair
+  womanGraphics.fillStyle(0x1a1a1a, 1);
+  womanGraphics.fillRoundedRect(9, 4, 22, 16, { tl: 11, tr: 11, bl: 0, br: 0 });
+  womanGraphics.fillRect(8, 10, 4, 12);
+  womanGraphics.fillRect(28, 10, 4, 12);
+  // Eyes
+  womanGraphics.fillStyle(0x000000, 1);
+  womanGraphics.fillCircle(16, 17, 2);
+  womanGraphics.fillCircle(24, 17, 2);
+  // Smirk
+  womanGraphics.lineStyle(1.5, 0x000000, 1);
+  womanGraphics.lineBetween(17, 23, 24, 22);
+  // Name tag
+  womanGraphics.fillStyle(0xffffff, 1);
+  womanGraphics.fillRect(10, 30, 20, 10);
+  womanGraphics.fillStyle(0xff0000, 1);
+  womanGraphics.fillRect(10, 30, 20, 3);
+  womanGraphics.generateTexture('woman', 40, 62);
+  womanGraphics.destroy();
+
+  // Doubt ball
+  const doubtGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+  doubtGraphics.fillStyle(0x555588, 1);
+  doubtGraphics.fillCircle(14, 14, 14);
+  doubtGraphics.fillStyle(0x8888bb, 0.5);
+  doubtGraphics.fillCircle(10, 10, 6);
+  doubtGraphics.generateTexture('doubt', 28, 28);
+  doubtGraphics.destroy();
+
+  // Shade ball
+  const shadeGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+  shadeGraphics.fillStyle(0x222222, 1);
+  shadeGraphics.fillCircle(14, 14, 14);
+  shadeGraphics.fillStyle(0x444444, 0.5);
+  shadeGraphics.fillCircle(10, 10, 6);
+  shadeGraphics.generateTexture('shade', 28, 28);
+  shadeGraphics.destroy();
+
   this.scene.start('MenuScene');
 };
 
@@ -202,17 +252,15 @@ const LEVELS = [
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 750, y: 265 }
   },
-  { // Level 3 - Two slow bugs, still generous platforms
+  { // Level 3 - "test" throws doubt and shade balls
     platforms: [
       { x: 150, y: 470, type: 'platform' },
       { x: 350, y: 420, type: 'platform' },
       { x: 550, y: 360, type: 'platform' },
       { x: 720, y: 300, type: 'platform' }
     ],
-    bugs: [
-      { x: 350, y: 380, vx: 60, vy: 0, bounceX: true, rangeX: [280, 420] },
-      { x: 600, y: 320, vx: 50, vy: 0, bounceX: true, rangeX: [530, 670] }
-    ],
+    bugs: [],
+    bossLevel: true,
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 750, y: 255 }
   },
@@ -354,10 +402,48 @@ GameScene.prototype.create = function() {
     bug.body.setAllowGravity(false);
   });
 
+  // Projectiles group (for doubt/shade balls)
+  this.projectiles = this.physics.add.group({ allowGravity: true });
+
+  // Boss level - "test" woman throws doubt and shade
+  this.isBossLevel = levelData.bossLevel || false;
+  if (this.isBossLevel) {
+    // Woman sprite at top center
+    this.woman = this.add.image(400, 40, 'woman').setScale(1.3);
+    // Name tag text
+    this.add.text(400, 75, 'test', {
+      fontSize: '10px',
+      fontFamily: 'monospace',
+      color: '#ff0000',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    // Woman moves side to side
+    this.tweens.add({
+      targets: this.woman,
+      x: 650,
+      duration: 2500,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+
+    // Throw balls on a timer
+    this.throwTimer = this.time.addEvent({
+      delay: 1200,
+      callback: this.throwBall,
+      callbackScope: this,
+      loop: true
+    });
+  }
+
   // Collisions
   this.physics.add.collider(this.player, this.ground);
   this.physics.add.collider(this.player, this.platforms);
+  this.physics.add.collider(this.projectiles, this.ground, this.ballHitGround, null, this);
+  this.physics.add.collider(this.projectiles, this.platforms, this.ballHitGround, null, this);
   this.physics.add.overlap(this.player, this.bugs, this.hitBug, null, this);
+  this.physics.add.overlap(this.player, this.projectiles, this.hitBug, null, this);
   this.physics.add.overlap(this.player, this.flag, this.reachGoal, null, this);
 
   // Controls
@@ -461,6 +547,15 @@ GameScene.prototype.update = function() {
     // Rotate bug for visual flair
     bug.angle += 2;
   });
+
+  // Update projectile labels to follow balls
+  this.projectiles.getChildren().forEach(ball => {
+    const lbl = ball.getData('label');
+    if (lbl && lbl.active) {
+      lbl.x = ball.x;
+      lbl.y = ball.y - 20;
+    }
+  });
 };
 
 GameScene.prototype.hitBug = function(player, bug) {
@@ -489,6 +584,53 @@ GameScene.prototype.reachGoal = function(player, flag) {
 
   this.time.delayedCall(1000, () => {
     this.scene.start('LevelCompleteScene');
+  });
+};
+
+GameScene.prototype.throwBall = function() {
+  if (this.isGameOver || !this.isBossLevel) return;
+
+  const isDoubt = Phaser.Math.Between(0, 1) === 0;
+  const texture = isDoubt ? 'doubt' : 'shade';
+  const label = isDoubt ? 'DOUBT' : 'SHADE';
+
+  const ball = this.projectiles.create(this.woman.x, this.woman.y + 30, texture);
+  ball.setBounce(0.4);
+  ball.setCollideWorldBounds(true);
+
+  // Aim roughly toward the player with some randomness
+  const angle = Phaser.Math.Angle.Between(this.woman.x, this.woman.y, this.player.x, this.player.y);
+  const speed = Phaser.Math.Between(180, 280);
+  ball.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed + 50);
+  ball.setAngularVelocity(Phaser.Math.Between(-300, 300));
+
+  // Add floating text label on the ball
+  const ballLabel = this.add.text(ball.x, ball.y - 16, label, {
+    fontSize: '9px',
+    fontFamily: 'monospace',
+    color: isDoubt ? '#8888bb' : '#666666',
+    fontStyle: 'bold'
+  }).setOrigin(0.5);
+  ball.setData('label', ballLabel);
+
+  // Clean up after a while
+  this.time.delayedCall(6000, () => {
+    if (ball && ball.active) {
+      const lbl = ball.getData('label');
+      if (lbl) lbl.destroy();
+      ball.destroy();
+    }
+  });
+};
+
+GameScene.prototype.ballHitGround = function(ball) {
+  // Destroy ball label and ball after hitting ground/platform a couple times
+  this.time.delayedCall(2000, () => {
+    if (ball && ball.active) {
+      const lbl = ball.getData('label');
+      if (lbl) lbl.destroy();
+      ball.destroy();
+    }
   });
 };
 
