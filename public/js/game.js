@@ -137,6 +137,29 @@ BootScene.prototype.create = function() {
   devGraphics.generateTexture('devMarker', 40, 42);
   devGraphics.destroy();
 
+  // Checkpoint - Server Backup power-up
+  const cpGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+  // Server box (smaller, glowing)
+  cpGraphics.fillStyle(0x00aaff, 1);
+  cpGraphics.fillRoundedRect(4, 8, 32, 30, 4);
+  cpGraphics.fillStyle(0x0088dd, 1);
+  cpGraphics.fillRoundedRect(8, 12, 24, 10, 2);
+  cpGraphics.fillRoundedRect(8, 25, 24, 10, 2);
+  // Blinking lights
+  cpGraphics.fillStyle(0x00ff00, 1);
+  cpGraphics.fillCircle(14, 17, 2);
+  cpGraphics.fillCircle(14, 30, 2);
+  cpGraphics.fillStyle(0xffff00, 1);
+  cpGraphics.fillCircle(26, 17, 2);
+  cpGraphics.fillCircle(26, 30, 2);
+  // Save icon (floppy disk shape at top)
+  cpGraphics.fillStyle(0xffffff, 1);
+  cpGraphics.fillRect(14, 0, 12, 8);
+  cpGraphics.fillStyle(0x00aaff, 1);
+  cpGraphics.fillRect(17, 1, 6, 5);
+  cpGraphics.generateTexture('checkpoint', 40, 40);
+  cpGraphics.destroy();
+
   // Woman sprite ("test") - dark hair, name tag
   const womanGraphics = this.make.graphics({ x: 0, y: 0, add: false });
   // Body/dress
@@ -337,37 +360,79 @@ MenuScene.prototype.create = function() {
   const { width, height } = this.cameras.main;
   this.cameras.main.setBackgroundColor('#1a1a2e');
 
-  this.add.text(width / 2, 100, 'KIRO BUG DODGE', {
-    fontSize: '48px',
+  this.add.text(width / 2, 60, 'KIRO BUG DODGE', {
+    fontSize: '42px',
     fontFamily: 'monospace',
     color: '#9b59b6',
     fontStyle: 'bold'
   }).setOrigin(0.5);
 
-  const kiro = this.add.image(width / 2, 230, 'kiro').setScale(3);
+  const kiro = this.add.image(180, 180, 'kiro').setScale(2.5);
   this.tweens.add({
     targets: kiro,
-    y: 250,
+    y: 195,
     duration: 1000,
     yoyo: true,
     repeat: -1,
     ease: 'Sine.easeInOut'
   });
 
-  this.add.text(width / 2, 340, 'Get Kiro from DEV to PROD!\nAvoid bugs & manager shade - ONE HIT = GAME OVER', {
-    fontSize: '16px',
+  this.add.text(180, 260, 'Get Kiro from DEV to PROD!\nAvoid bugs & manager shade\nONE HIT = GAME OVER', {
+    fontSize: '12px',
     fontFamily: 'monospace',
     color: '#aaaacc',
     align: 'center'
   }).setOrigin(0.5);
 
-  this.add.text(width / 2, 410, 'Controls: Arrow Keys / WASD to move\nSPACE or UP to jump', {
-    fontSize: '14px',
+  this.add.text(180, 320, 'Arrow Keys / WASD to move\nSPACE or UP to jump', {
+    fontSize: '11px',
     fontFamily: 'monospace',
     color: '#667788',
     align: 'center'
   }).setOrigin(0.5);
 
+  // Leaderboard on the right
+  this.add.text(580, 110, '🏆 LEADERBOARD', {
+    fontSize: '18px',
+    fontFamily: 'monospace',
+    color: '#ffcc00',
+    fontStyle: 'bold'
+  }).setOrigin(0.5);
+
+  // Request leaderboard from server
+  const socket = this.registry.get('socket');
+  if (socket) {
+    socket.on('leaderboard', (entries) => {
+      if (entries.length === 0) {
+        this.add.text(580, 150, 'No entries yet!\nBe the first to compete!', {
+          fontSize: '12px',
+          fontFamily: 'monospace',
+          color: '#667788',
+          align: 'center'
+        }).setOrigin(0.5);
+      } else {
+        const top10 = entries.slice(0, 10);
+        top10.forEach((entry, i) => {
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.';
+          const text = medal + ' ' + entry.name + ' - ' + entry.time.toFixed(2) + 's';
+          this.add.text(580, 140 + i * 24, text, {
+            fontSize: '13px',
+            fontFamily: 'monospace',
+            color: i < 3 ? '#ffcc00' : '#aaaacc'
+          }).setOrigin(0.5);
+        });
+      }
+    });
+    socket.emit('getLeaderboard');
+  } else {
+    this.add.text(580, 150, 'Connecting...', {
+      fontSize: '12px',
+      fontFamily: 'monospace',
+      color: '#667788'
+    }).setOrigin(0.5);
+  }
+
+  // Start button
   const startText = this.add.text(width / 2, 520, '[ PRESS SPACE TO START ]', {
     fontSize: '22px',
     fontFamily: 'monospace',
@@ -382,6 +447,14 @@ MenuScene.prototype.create = function() {
     yoyo: true,
     repeat: -1
   });
+
+  // Show mode
+  const isCompetitive = this.registry.get('competitive');
+  this.add.text(width / 2, 560, isCompetitive ? '⚡ Competitive Mode' : '☕ Casual Mode', {
+    fontSize: '13px',
+    fontFamily: 'monospace',
+    color: isCompetitive ? '#ffcc00' : '#667788'
+  }).setOrigin(0.5);
 
   this.input.keyboard.once('keydown-SPACE', () => {
     this.registry.set('currentLevel', 1);
@@ -446,6 +519,7 @@ const LEVELS = [
       { x: 550, y: 330, vx: 30, vy: 0, bounceX: true, rangeX: [480, 620] },
       { x: 450, y: 270, vx: 0, vy: 30, bounceY: true, rangeY: [240, 310] }
     ],
+    checkpoint: { x: 450, y: 280 },
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 730, y: 265 }
   },
@@ -519,6 +593,28 @@ GameScene.prototype.create = function() {
     color: '#00ff88',
     fontStyle: 'bold'
   }).setOrigin(0.5);
+
+  // Checkpoint (server backup power-up)
+  this.checkpointActivated = false;
+  this.respawnPoint = { x: levelData.playerStart.x, y: levelData.playerStart.y };
+  if (levelData.checkpoint) {
+    this.checkpointSprite = this.physics.add.staticSprite(levelData.checkpoint.x, levelData.checkpoint.y - 20, 'checkpoint');
+    this.checkpointLabel = this.add.text(levelData.checkpoint.x, levelData.checkpoint.y - 48, '💾 BACKUP', {
+      fontSize: '10px',
+      fontFamily: 'monospace',
+      color: '#00aaff',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+    // Glow effect
+    this.tweens.add({
+      targets: this.checkpointSprite,
+      alpha: 0.5,
+      duration: 800,
+      yoyo: true,
+      repeat: -1
+    });
+    this.physics.add.overlap(this.player, this.checkpointSprite, this.activateCheckpoint, null, this);
+  }
 
   // Bugs (patrol patterns)
   this.bugs = this.physics.add.group({ allowGravity: false });
@@ -886,8 +982,29 @@ GameScene.prototype.update = function() {
 
 GameScene.prototype.hitBug = function(player, bug) {
   if (this.isGameOver) return;
-  this.isGameOver = true;
 
+  if (this.checkpointActivated) {
+    // Respawn at checkpoint instead of game over
+    this.cameras.main.shake(200, 0.015);
+    player.setPosition(this.respawnPoint.x, this.respawnPoint.y);
+    player.setVelocity(0, 0);
+    // Brief invincibility flash
+    this.isGameOver = true;
+    player.setAlpha(0.3);
+    this.time.delayedCall(800, () => {
+      player.setAlpha(1);
+      this.isGameOver = false;
+    });
+    // Checkpoint used up
+    this.checkpointActivated = false;
+    if (this.checkpointLabel) {
+      this.checkpointLabel.setText('💾 USED');
+      this.checkpointLabel.setColor('#666666');
+    }
+    return;
+  }
+
+  this.isGameOver = true;
   this.physics.pause();
   player.setTint(0xff0000);
   this.cameras.main.shake(300, 0.02);
@@ -902,6 +1019,22 @@ GameScene.prototype.hitBug = function(player, bug) {
   this.time.delayedCall(1200, () => {
     this.scene.start('GameOverScene');
   });
+};
+
+GameScene.prototype.activateCheckpoint = function(player, checkpoint) {
+  if (this.checkpointActivated) return;
+  this.checkpointActivated = true;
+  this.respawnPoint = { x: checkpoint.x, y: checkpoint.y };
+
+  // Visual feedback
+  checkpoint.setTint(0x00ff00);
+  this.tweens.killTweensOf(checkpoint);
+  checkpoint.setAlpha(1);
+  if (this.checkpointLabel) {
+    this.checkpointLabel.setText('✅ SAVED!');
+    this.checkpointLabel.setColor('#00ff00');
+  }
+  this.cameras.main.flash(200, 0, 170, 255);
 };
 
 GameScene.prototype.reachGoal = function(player, flag) {
