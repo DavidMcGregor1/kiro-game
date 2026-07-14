@@ -402,7 +402,8 @@ MenuScene.prototype.create = function() {
   // Request leaderboard from server
   const socket = this.registry.get('socket');
   if (socket) {
-    socket.on('leaderboard', (entries) => {
+    socket.off('leaderboard');
+    socket.once('leaderboard', (entries) => {
       if (entries.length === 0) {
         this.add.text(580, 150, 'No entries yet!\nBe the first to compete!', {
           fontSize: '12px',
@@ -1229,11 +1230,14 @@ VictoryScene.prototype.create = function() {
     const socket = this.registry.get('socket');
     if (socket) {
       socket.emit('submitTime', { name: playerName, time: parseFloat(totalTime), color: playerColor });
-      // Request leaderboard
-      socket.on('leaderboard', (entries) => {
+      // Request leaderboard after brief delay to ensure submission is processed
+      socket.off('leaderboard');
+      socket.once('leaderboard', (entries) => {
         this.showLeaderboard(entries);
       });
-      socket.emit('getLeaderboard');
+      setTimeout(() => {
+        socket.emit('getLeaderboard');
+      }, 500);
     }
   } else {
     this.add.text(width / 2, 260, 'Time: ' + totalTime + 's (casual mode)', {
