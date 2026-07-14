@@ -455,6 +455,18 @@ MenuScene.prototype.create = function() {
       }
     });
     socket.emit('getLeaderboard');
+
+    // Get total attempts stats
+    socket.off('stats');
+    socket.once('stats', (data) => {
+      this.add.text(180, 380, '🎮 Total Attempts: ' + data.totalAttempts, {
+        fontSize: '14px',
+        fontFamily: 'monospace',
+        color: '#9b59b6',
+        fontStyle: 'bold'
+      }).setOrigin(0.5);
+    });
+    socket.emit('getStats');
   } else {
     this.add.text(580, 150, 'Connecting...', {
       fontSize: '12px',
@@ -587,6 +599,9 @@ GameScene.prototype.create = function() {
   if (this.currentLevel === 1) {
     this.registry.set('startTime', Date.now());
     this.registry.set('checkpointActive', false);
+    // Track attempt
+    const socket = this.registry.get('socket');
+    if (socket) socket.emit('gameStarted');
   }
 
   const levelIndex = this.currentLevel - 1;

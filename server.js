@@ -16,6 +16,8 @@ const players = {};
 // In-memory leaderboard (competitive mode only)
 const leaderboard = [];
 
+// Total attempts counter
+let totalAttempts = 0;
 io.on('connection', (socket) => {
   console.log('Player connected:', socket.id);
 
@@ -101,6 +103,16 @@ io.on('connection', (socket) => {
   // Get leaderboard
   socket.on('getLeaderboard', () => {
     socket.emit('leaderboard', leaderboard);
+  });
+
+  // Track game attempts
+  socket.on('gameStarted', () => {
+    totalAttempts++;
+  });
+
+  // Get stats
+  socket.on('getStats', () => {
+    socket.emit('stats', { totalAttempts: totalAttempts });
   });
 
   // Disconnect
