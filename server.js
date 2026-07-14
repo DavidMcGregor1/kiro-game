@@ -13,6 +13,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 // In-memory player state (no DB needed)
 const players = {};
 
+// In-memory leaderboard (competitive mode only)
+const leaderboard = [];
+
 io.on('connection', (socket) => {
   console.log('Player connected:', socket.id);
 
@@ -74,6 +77,30 @@ io.on('connection', (socket) => {
       players[socket.id].level = level;
       socket.broadcast.emit('playerLevelChanged', { id: socket.id, level: level });
     }
+  });
+
+  // Submit time (competitive mode only)
+  socket.on('submitTime', (data) => {
+    if (data && data.name && typeof data.time === 'number') {
+      leaderboard.push({
+        name: data.name,
+        time: data.time,
+        color: data.color || 0x9b59b6,
+        date: Date.now()
+      });
+      // Sort by fastest time
+      leaderboard.sort((a, b) => a.time - b.time);
+      // Keep top 50 entries
+      if (leaderboard.length > 50) {
+        leaderboard.length = 50;
+      }
+      console.log('Leaderboard entry:', data.name, data.time + 's');
+    }
+  });
+
+  // Get leaderboard
+  socket.on('getLeaderboard', () => {
+    socket.emit('leaderboard', leaderboard);
   });
 
   // Disconnect

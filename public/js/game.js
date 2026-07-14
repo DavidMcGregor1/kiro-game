@@ -16,7 +16,7 @@ const config = {
       debug: false
     }
   },
-  scene: [BootScene, NameEntryScene, MenuScene, GameScene, LevelCompleteScene, GameOverScene]
+  scene: [BootScene, NameEntryScene, MenuScene, GameScene, LevelCompleteScene, VictoryScene, GameOverScene]
 };
 
 // --- BOOT SCENE ---
@@ -268,7 +268,7 @@ NameEntryScene.prototype.create = function() {
     if (i === 0) swatch.setStrokeStyle(3, 0xffffff);
   });
 
-  const goText = this.add.text(width / 2, 460, '[ PRESS ENTER TO PLAY ]', {
+  const goText = this.add.text(width / 2, 470, '[ PRESS ENTER TO PLAY ]', {
     fontSize: '20px',
     fontFamily: 'monospace',
     color: '#00ffcc',
@@ -283,7 +283,27 @@ NameEntryScene.prototype.create = function() {
     repeat: -1
   });
 
-  this.add.text(width / 2, 530, 'Other players will appear as ghosts!', {
+  // Competitive mode toggle (auto-ticked)
+  this.competitive = true;
+  const checkBox = this.add.text(width / 2 - 100, 430, '☑', {
+    fontSize: '22px',
+    fontFamily: 'monospace',
+    color: '#ffcc00'
+  }).setInteractive({ useHandCursor: true });
+
+  const compLabel = this.add.text(width / 2 - 75, 433, 'Competitive Mode (timed + leaderboard)', {
+    fontSize: '12px',
+    fontFamily: 'monospace',
+    color: '#ffcc00'
+  });
+
+  checkBox.on('pointerdown', () => {
+    this.competitive = !this.competitive;
+    checkBox.setText(this.competitive ? '☑' : '☐');
+    compLabel.setColor(this.competitive ? '#ffcc00' : '#667788');
+  });
+
+  this.add.text(width / 2, 550, 'Other players will appear as ghosts!', {
     fontSize: '14px',
     fontFamily: 'monospace',
     color: '#667788'
@@ -295,6 +315,7 @@ NameEntryScene.prototype.create = function() {
     const name = (input && input.value.trim()) || 'Ghost';
     this.registry.set('playerName', name);
     this.registry.set('playerColor', this.selectedColor);
+    this.registry.set('competitive', this.competitive);
 
     // Connect to Socket.io
     const socket = io();
@@ -439,50 +460,6 @@ const LEVELS = [
     bossLevel: true,
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 750, y: 265 }
-  },
-  { // Level 6 - Dense bugs
-    platforms: [
-      { x: 150, y: 470, type: 'platformSmall' },
-      { x: 350, y: 430, type: 'platformSmall' },
-      { x: 550, y: 380, type: 'platformSmall' },
-      { x: 400, y: 300, type: 'platformSmall' },
-      { x: 200, y: 240, type: 'platformSmall' },
-      { x: 400, y: 180, type: 'platformSmall' },
-      { x: 600, y: 240, type: 'platformSmall' },
-      { x: 720, y: 180, type: 'platformSmall' }
-    ],
-    bugs: [
-      { x: 350, y: 390, vx: 140, vy: 0, bounceX: true, rangeX: [280, 420] },
-      { x: 550, y: 340, vx: 0, vy: 120, bounceY: true, rangeY: [300, 380] },
-      { x: 400, y: 260, vx: 160, vy: 0, bounceX: true, rangeX: [320, 480] },
-      { x: 200, y: 200, vx: 0, vy: 100, bounceY: true, rangeY: [160, 240] },
-      { x: 600, y: 200, vx: 130, vy: 0, bounceX: true, rangeX: [530, 670] }
-    ],
-    playerStart: { x: 60, y: 520 },
-    flagPos: { x: 740, y: 135 }
-  },
-  { // Level 7 - The gauntlet
-    platforms: [
-      { x: 120, y: 480, type: 'platformSmall' },
-      { x: 280, y: 430, type: 'platformSmall' },
-      { x: 440, y: 480, type: 'platformSmall' },
-      { x: 580, y: 400, type: 'platformSmall' },
-      { x: 400, y: 320, type: 'platformSmall' },
-      { x: 200, y: 260, type: 'platformSmall' },
-      { x: 400, y: 190, type: 'platformSmall' },
-      { x: 600, y: 130, type: 'platformSmall' },
-      { x: 740, y: 200, type: 'platformSmall' }
-    ],
-    bugs: [
-      { x: 280, y: 390, vx: 150, vy: 0, bounceX: true, rangeX: [210, 350] },
-      { x: 440, y: 440, vx: 0, vy: 130, bounceY: true, rangeY: [400, 480] },
-      { x: 580, y: 360, vx: 160, vy: 0, bounceX: true, rangeX: [510, 650] },
-      { x: 400, y: 280, vx: 0, vy: 140, bounceY: true, rangeY: [240, 320] },
-      { x: 200, y: 220, vx: 170, vy: 0, bounceX: true, rangeX: [130, 270] },
-      { x: 600, y: 90, vx: 180, vy: 0, bounceX: true, rangeX: [520, 680] }
-    ],
-    playerStart: { x: 60, y: 520 },
-    flagPos: { x: 750, y: 155 }
   }
 ];
 
@@ -499,11 +476,15 @@ GameScene.prototype.create = function() {
 
   this.currentLevel = this.registry.get('currentLevel') || 1;
   this.isGameOver = false;
+  this.isCompetitive = this.registry.get('competitive') || false;
 
-  // Get level data (loop back with increased speed if past level 5)
-  const levelIndex = ((this.currentLevel - 1) % LEVELS.length);
+  // Start timer on level 1
+  if (this.currentLevel === 1) {
+    this.registry.set('startTime', Date.now());
+  }
+
+  const levelIndex = this.currentLevel - 1;
   const levelData = LEVELS[levelIndex];
-  const speedMultiplier = 1 + Math.floor((this.currentLevel - 1) / LEVELS.length) * 0.3;
 
   // Ground
   this.ground = this.physics.add.staticGroup();
@@ -545,8 +526,8 @@ GameScene.prototype.create = function() {
     const bug = this.bugs.create(b.x, b.y, 'bug');
     bug.setData('originX', b.x);
     bug.setData('originY', b.y);
-    bug.setData('vx', b.vx * speedMultiplier);
-    bug.setData('vy', b.vy * speedMultiplier);
+    bug.setData('vx', b.vx);
+    bug.setData('vy', b.vy);
     bug.setData('bounceX', b.bounceX || false);
     bug.setData('bounceY', b.bounceY || false);
     bug.setData('rangeX', b.rangeX || null);
@@ -626,24 +607,55 @@ GameScene.prototype.create = function() {
     color: '#667788'
   });
 
-  // Skip level button
-  const skipBtn = this.add.text(784, 16, '[ SKIP >> ]', {
-    fontSize: '14px',
+  // Skip level button (hidden in competitive mode)
+  if (!this.isCompetitive) {
+    const skipBtn = this.add.text(784, 16, '[ SKIP >> ]', {
+      fontSize: '14px',
+      fontFamily: 'monospace',
+      color: '#ffcc00',
+      backgroundColor: '#333333',
+      padding: { x: 6, y: 4 }
+    }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+
+    skipBtn.on('pointerover', () => skipBtn.setColor('#ffffff'));
+    skipBtn.on('pointerout', () => skipBtn.setColor('#ffcc00'));
+    skipBtn.on('pointerdown', () => {
+      if (!this.isGameOver) {
+        this.isGameOver = true;
+        if (this.currentLevel >= LEVELS.length) {
+          this.scene.start('VictoryScene');
+        } else {
+          this.registry.set('currentLevel', this.currentLevel + 1);
+          this.scene.start('LevelCompleteScene');
+        }
+      }
+    });
+  }
+
+  // Home button
+  const homeBtn = this.add.text(784, this.isCompetitive ? 16 : 46, '[ HOME ]', {
+    fontSize: '12px',
     fontFamily: 'monospace',
-    color: '#ffcc00',
+    color: '#aaaaaa',
     backgroundColor: '#333333',
-    padding: { x: 6, y: 4 }
+    padding: { x: 6, y: 3 }
   }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
 
-  skipBtn.on('pointerover', () => skipBtn.setColor('#ffffff'));
-  skipBtn.on('pointerout', () => skipBtn.setColor('#ffcc00'));
-  skipBtn.on('pointerdown', () => {
-    if (!this.isGameOver) {
-      this.isGameOver = true;
-      this.registry.set('currentLevel', this.currentLevel + 1);
-      this.scene.start('LevelCompleteScene');
-    }
+  homeBtn.on('pointerover', () => homeBtn.setColor('#ffffff'));
+  homeBtn.on('pointerout', () => homeBtn.setColor('#aaaaaa'));
+  homeBtn.on('pointerdown', () => {
+    this.scene.start('NameEntryScene');
   });
+
+  // Timer display (competitive mode)
+  if (this.isCompetitive) {
+    this.timerText = this.add.text(400, 16, '⏱ 0.00s', {
+      fontSize: '18px',
+      fontFamily: 'monospace',
+      color: '#ffcc00',
+      fontStyle: 'bold'
+    }).setOrigin(0.5, 0);
+  }
 
   // Flag glow effect
   this.tweens.add({
@@ -854,6 +866,12 @@ GameScene.prototype.update = function() {
     this.playerLabel.y = this.player.y - 30;
   }
 
+  // Update timer display
+  if (this.isCompetitive && this.timerText && !this.isGameOver) {
+    const elapsed = ((Date.now() - this.registry.get('startTime')) / 1000).toFixed(2);
+    this.timerText.setText('⏱ ' + elapsed + 's');
+  }
+
   // Broadcast position to other players
   if (this.socket) {
     this.socket.emit('playerMove', {
@@ -893,11 +911,17 @@ GameScene.prototype.reachGoal = function(player, flag) {
   player.setTint(0x00ff88);
   this.cameras.main.flash(500, 0, 255, 136);
 
-  this.registry.set('currentLevel', this.currentLevel + 1);
-
-  this.time.delayedCall(1000, () => {
-    this.scene.start('LevelCompleteScene');
-  });
+  if (this.currentLevel >= LEVELS.length) {
+    // Completed all levels!
+    this.time.delayedCall(1000, () => {
+      this.scene.start('VictoryScene');
+    });
+  } else {
+    this.registry.set('currentLevel', this.currentLevel + 1);
+    this.time.delayedCall(1000, () => {
+      this.scene.start('LevelCompleteScene');
+    });
+  }
 };
 
 GameScene.prototype.throwBall = function() {
@@ -986,13 +1010,6 @@ LevelCompleteScene.prototype.create = function() {
     color: '#aaaacc'
   }).setOrigin(0.5);
 
-  if (nextLevel > LEVELS.length) {
-    this.add.text(width / 2, 420, '(Levels repeat faster now!)', {
-      fontSize: '14px',
-      fontFamily: 'monospace',
-      color: '#ffcc00'
-    }).setOrigin(0.5);
-  }
 
   const continueText = this.add.text(width / 2, 500, '[ PRESS SPACE TO CONTINUE ]', {
     fontSize: '20px',
@@ -1014,6 +1031,133 @@ LevelCompleteScene.prototype.create = function() {
   });
   this.input.keyboard.once('keydown-ENTER', () => {
     this.scene.start('GameScene');
+  });
+};
+
+// --- VICTORY SCENE ---
+function VictoryScene() {
+  Phaser.Scene.call(this, { key: 'VictoryScene' });
+}
+VictoryScene.prototype = Object.create(Phaser.Scene.prototype);
+VictoryScene.prototype.constructor = VictoryScene;
+
+VictoryScene.prototype.create = function() {
+  const { width, height } = this.cameras.main;
+  this.cameras.main.setBackgroundColor('#1a1a2e');
+
+  const isCompetitive = this.registry.get('competitive') || false;
+  const playerName = this.registry.get('playerName') || 'Ghost';
+  const playerColor = this.registry.get('playerColor') || 0x9b59b6;
+  const startTime = this.registry.get('startTime') || 0;
+  const finishTime = Date.now();
+  const totalTime = ((finishTime - startTime) / 1000).toFixed(2);
+
+  this.add.text(width / 2, 60, '🚀 SHIPPED TO PROD! 🚀', {
+    fontSize: '36px',
+    fontFamily: 'monospace',
+    color: '#00ff88',
+    fontStyle: 'bold'
+  }).setOrigin(0.5);
+
+  const kiro = this.add.image(width / 2, 150, 'kiro').setScale(2.5);
+  kiro.setTint(playerColor);
+  this.tweens.add({
+    targets: kiro,
+    y: 165,
+    duration: 600,
+    yoyo: true,
+    repeat: -1,
+    ease: 'Sine.easeInOut'
+  });
+
+  this.add.text(width / 2, 220, playerName + ' made it to PROD!', {
+    fontSize: '20px',
+    fontFamily: 'monospace',
+    color: '#ffffff'
+  }).setOrigin(0.5);
+
+  if (isCompetitive) {
+    this.add.text(width / 2, 260, 'Time: ' + totalTime + 's', {
+      fontSize: '28px',
+      fontFamily: 'monospace',
+      color: '#ffcc00',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    // Submit to leaderboard
+    const socket = this.registry.get('socket');
+    if (socket) {
+      socket.emit('submitTime', { name: playerName, time: parseFloat(totalTime), color: playerColor });
+      // Request leaderboard
+      socket.on('leaderboard', (entries) => {
+        this.showLeaderboard(entries);
+      });
+      socket.emit('getLeaderboard');
+    }
+  } else {
+    this.add.text(width / 2, 260, 'Time: ' + totalTime + 's (casual mode)', {
+      fontSize: '18px',
+      fontFamily: 'monospace',
+      color: '#667788'
+    }).setOrigin(0.5);
+
+    this.add.text(width / 2, 290, 'Play in competitive mode to join the leaderboard!', {
+      fontSize: '12px',
+      fontFamily: 'monospace',
+      color: '#998800'
+    }).setOrigin(0.5);
+  }
+
+  // Play again button
+  const playAgain = this.add.text(width / 2, 540, '[ PLAY AGAIN ]', {
+    fontSize: '18px',
+    fontFamily: 'monospace',
+    color: '#00ffcc',
+    fontStyle: 'bold'
+  }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+  playAgain.on('pointerover', () => playAgain.setColor('#ffffff'));
+  playAgain.on('pointerout', () => playAgain.setColor('#00ffcc'));
+  playAgain.on('pointerdown', () => {
+    this.registry.set('currentLevel', 1);
+    const socket = this.registry.get('socket');
+    if (socket) socket.emit('playerRestart');
+    this.scene.start('GameScene');
+  });
+
+  // Home button
+  const homeBtn = this.add.text(width / 2, 575, '[ HOME ]', {
+    fontSize: '14px',
+    fontFamily: 'monospace',
+    color: '#aaaaaa'
+  }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+  homeBtn.on('pointerover', () => homeBtn.setColor('#ffffff'));
+  homeBtn.on('pointerout', () => homeBtn.setColor('#aaaaaa'));
+  homeBtn.on('pointerdown', () => {
+    this.scene.start('NameEntryScene');
+  });
+};
+
+VictoryScene.prototype.showLeaderboard = function(entries) {
+  const { width } = this.cameras.main;
+
+  this.add.text(width / 2, 320, '🏆 LEADERBOARD', {
+    fontSize: '18px',
+    fontFamily: 'monospace',
+    color: '#ffcc00',
+    fontStyle: 'bold'
+  }).setOrigin(0.5);
+
+  const top10 = entries.slice(0, 10);
+  top10.forEach((entry, i) => {
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '  ';
+    const text = medal + ' ' + entry.name + ' - ' + entry.time.toFixed(2) + 's';
+    this.add.text(width / 2, 350 + i * 20, text, {
+      fontSize: '13px',
+      fontFamily: 'monospace',
+      color: i < 3 ? '#ffcc00' : '#aaaacc'
+    }).setOrigin(0.5);
   });
 };
 
