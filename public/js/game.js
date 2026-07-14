@@ -247,7 +247,7 @@ const LEVELS = [
       { x: 750, y: 310, type: 'platform' }
     ],
     bugs: [
-      { x: 400, y: 380, vx: 40, vy: 0, bounceX: true, rangeX: [330, 470] }
+      { x: 400, y: 380, vx: 25, vy: 0, bounceX: true, rangeX: [330, 470] }
     ],
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 750, y: 265 }
@@ -260,8 +260,8 @@ const LEVELS = [
       { x: 720, y: 310, type: 'platform' }
     ],
     bugs: [
-      { x: 350, y: 380, vx: 45, vy: 0, bounceX: true, rangeX: [280, 420] },
-      { x: 600, y: 330, vx: 40, vy: 0, bounceX: true, rangeX: [540, 680] }
+      { x: 350, y: 380, vx: 30, vy: 0, bounceX: true, rangeX: [280, 420] },
+      { x: 600, y: 330, vx: 25, vy: 0, bounceX: true, rangeX: [540, 680] }
     ],
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 750, y: 265 }
@@ -275,9 +275,9 @@ const LEVELS = [
       { x: 700, y: 290, type: 'platform' }
     ],
     bugs: [
-      { x: 350, y: 370, vx: 55, vy: 0, bounceX: true, rangeX: [280, 420] },
-      { x: 550, y: 310, vx: 50, vy: 0, bounceX: true, rangeX: [480, 620] },
-      { x: 400, y: 230, vx: 0, vy: 50, bounceY: true, rangeY: [200, 270] }
+      { x: 350, y: 370, vx: 35, vy: 0, bounceX: true, rangeX: [280, 420] },
+      { x: 550, y: 310, vx: 30, vy: 0, bounceX: true, rangeX: [480, 620] },
+      { x: 400, y: 230, vx: 0, vy: 30, bounceY: true, rangeY: [200, 270] }
     ],
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 730, y: 245 }
@@ -413,20 +413,20 @@ GameScene.prototype.create = function() {
       padding: { x: 4, y: 2 }
     }).setOrigin(0.5);
 
-    // Woman moves side to side slowly
+    // Woman moves side to side very slowly
     this.tweens.add({
       targets: this.woman,
-      x: 650,
-      duration: 4000,
+      x: 600,
+      duration: 6000,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut'
     });
     // Label follows via update loop
 
-    // Throw balls on a timer
+    // Throw balls on a timer - generous gap
     this.throwTimer = this.time.addEvent({
-      delay: 1800,
+      delay: 2800,
       callback: this.throwBall,
       callbackScope: this,
       loop: true
@@ -600,11 +600,11 @@ GameScene.prototype.throwBall = function() {
   ball.setBounce(0.4);
   ball.setCollideWorldBounds(true);
 
-  // Aim roughly toward the player - SLOW speed
+  // Aim roughly toward the player - VERY SLOW gentle lob
   const angle = Phaser.Math.Angle.Between(this.woman.x, this.woman.y, this.player.x, this.player.y);
-  const speed = Phaser.Math.Between(100, 160);
-  ball.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed + 30);
-  ball.setAngularVelocity(Phaser.Math.Between(-150, 150));
+  const speed = Phaser.Math.Between(60, 100);
+  ball.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed + 20);
+  ball.setAngularVelocity(Phaser.Math.Between(-80, 80));
 
   // Big obvious floating label on the ball
   const ballLabel = this.add.text(ball.x, ball.y - 20, label, {
