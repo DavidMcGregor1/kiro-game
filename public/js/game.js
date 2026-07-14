@@ -248,6 +248,19 @@ NameEntryScene.prototype.create = function() {
     'font-family:monospace; outline:none; width:240px;">'
   );
 
+  // Prevent Phaser from capturing keys while typing in the input
+  this.time.delayedCall(100, () => {
+    const input = document.getElementById('nameInput');
+    if (input) {
+      input.addEventListener('focus', () => {
+        this.input.keyboard.enabled = false;
+      });
+      input.addEventListener('blur', () => {
+        this.input.keyboard.enabled = true;
+      });
+    }
+  });
+
   // Color picker
   this.add.text(width / 2, 340, 'Choose ghost colour:', {
     fontSize: '18px',
@@ -332,8 +345,8 @@ NameEntryScene.prototype.create = function() {
     color: '#667788'
   }).setOrigin(0.5);
 
-  // Listen for Enter key
-  this.input.keyboard.on('keydown-ENTER', () => {
+  // Listen for Enter key (via DOM so it works while typing)
+  const startGame = () => {
     const input = document.getElementById('nameInput');
     const name = (input && input.value.trim()) || 'Ghost';
     this.registry.set('playerName', name);
@@ -345,8 +358,15 @@ NameEntryScene.prototype.create = function() {
     this.registry.set('socket', socket);
     socket.emit('playerJoin', { name: name, color: this.selectedColor });
 
+    this.input.keyboard.enabled = true;
+    document.removeEventListener('keydown', enterHandler);
     this.scene.start('MenuScene');
-  });
+  };
+
+  const enterHandler = (e) => {
+    if (e.key === 'Enter') startGame();
+  };
+  document.addEventListener('keydown', enterHandler);
 };
 
 // --- MENU SCENE ---
