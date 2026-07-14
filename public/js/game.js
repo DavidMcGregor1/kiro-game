@@ -387,18 +387,18 @@ const LEVELS = [
   { // Level 4 - Three bugs, still wide platforms
     platforms: [
       { x: 150, y: 470, type: 'platform' },
-      { x: 350, y: 410, type: 'platform' },
-      { x: 550, y: 350, type: 'platform' },
-      { x: 400, y: 270, type: 'platform' },
-      { x: 700, y: 290, type: 'platform' }
+      { x: 350, y: 420, type: 'platform' },
+      { x: 550, y: 370, type: 'platform' },
+      { x: 450, y: 310, type: 'platform' },
+      { x: 700, y: 310, type: 'platform' }
     ],
     bugs: [
-      { x: 350, y: 370, vx: 35, vy: 0, bounceX: true, rangeX: [280, 420] },
-      { x: 550, y: 310, vx: 30, vy: 0, bounceX: true, rangeX: [480, 620] },
-      { x: 400, y: 230, vx: 0, vy: 30, bounceY: true, rangeY: [200, 270] }
+      { x: 350, y: 380, vx: 35, vy: 0, bounceX: true, rangeX: [280, 420] },
+      { x: 550, y: 330, vx: 30, vy: 0, bounceX: true, rangeX: [480, 620] },
+      { x: 450, y: 270, vx: 0, vy: 30, bounceY: true, rangeY: [240, 310] }
     ],
     playerStart: { x: 60, y: 520 },
-    flagPos: { x: 730, y: 245 }
+    flagPos: { x: 730, y: 265 }
   },
   { // Level 5 - BOSS: "test" throws doubt and shade balls
     platforms: [
