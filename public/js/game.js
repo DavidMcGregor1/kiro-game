@@ -178,20 +178,45 @@ MenuScene.prototype.create = function() {
 
 // --- LEVEL DEFINITIONS ---
 const LEVELS = [
-  { // Level 1 - Easy intro
+  { // Level 1 - Tutorial, no bugs, just platforms
     platforms: [
-      { x: 150, y: 480, type: 'platform' },
-      { x: 350, y: 420, type: 'platform' },
-      { x: 550, y: 360, type: 'platform' },
-      { x: 700, y: 300, type: 'platform' }
+      { x: 200, y: 480, type: 'platform' },
+      { x: 400, y: 450, type: 'platform' },
+      { x: 600, y: 420, type: 'platform' },
+      { x: 750, y: 380, type: 'platform' }
+    ],
+    bugs: [],
+    playerStart: { x: 60, y: 520 },
+    flagPos: { x: 750, y: 335 }
+  },
+  { // Level 2 - One slow bug, wide platforms
+    platforms: [
+      { x: 180, y: 470, type: 'platform' },
+      { x: 400, y: 420, type: 'platform' },
+      { x: 620, y: 370, type: 'platform' },
+      { x: 750, y: 310, type: 'platform' }
     ],
     bugs: [
-      { x: 350, y: 380, vx: 80, vy: 0, bounceX: true, rangeX: [280, 420] }
+      { x: 400, y: 380, vx: 50, vy: 0, bounceX: true, rangeX: [330, 470] }
+    ],
+    playerStart: { x: 60, y: 520 },
+    flagPos: { x: 750, y: 265 }
+  },
+  { // Level 3 - Two slow bugs, still generous platforms
+    platforms: [
+      { x: 150, y: 470, type: 'platform' },
+      { x: 350, y: 420, type: 'platform' },
+      { x: 550, y: 360, type: 'platform' },
+      { x: 720, y: 300, type: 'platform' }
+    ],
+    bugs: [
+      { x: 350, y: 380, vx: 60, vy: 0, bounceX: true, rangeX: [280, 420] },
+      { x: 600, y: 320, vx: 50, vy: 0, bounceX: true, rangeX: [530, 670] }
     ],
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 750, y: 255 }
   },
-  { // Level 2 - More bugs, longer path
+  { // Level 4 - Getting harder, smaller platforms, faster bugs
     platforms: [
       { x: 120, y: 460, type: 'platform' },
       { x: 300, y: 400, type: 'platformSmall' },
@@ -203,12 +228,12 @@ const LEVELS = [
     bugs: [
       { x: 300, y: 360, vx: 100, vy: 0, bounceX: true, rangeX: [240, 360] },
       { x: 450, y: 300, vx: 0, vy: 80, bounceY: true, rangeY: [260, 340] },
-      { x: 550, y: 160, vx: 120, vy: 0, bounceX: true, rangeX: [490, 620] }
+      { x: 550, y: 160, vx: 100, vy: 0, bounceX: true, rangeX: [490, 620] }
     ],
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 740, y: 215 }
   },
-  { // Level 3 - Vertical challenge
+  { // Level 5 - Vertical challenge
     platforms: [
       { x: 100, y: 480, type: 'platformSmall' },
       { x: 250, y: 420, type: 'platformSmall' },
@@ -228,7 +253,7 @@ const LEVELS = [
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 720, y: 195 }
   },
-  { // Level 4 - Dense bugs
+  { // Level 6 - Dense bugs
     platforms: [
       { x: 150, y: 470, type: 'platformSmall' },
       { x: 350, y: 430, type: 'platformSmall' },
@@ -249,7 +274,7 @@ const LEVELS = [
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 740, y: 135 }
   },
-  { // Level 5 - The gauntlet
+  { // Level 7 - The gauntlet
     platforms: [
       { x: 120, y: 480, type: 'platformSmall' },
       { x: 280, y: 430, type: 'platformSmall' },
