@@ -6,6 +6,9 @@ const config = {
   width: 800,
   height: 600,
   parent: 'game-container',
+  dom: {
+    createContainer: true
+  },
   physics: {
     default: 'arcade',
     arcade: {
@@ -13,7 +16,7 @@ const config = {
       debug: false
     }
   },
-  scene: [BootScene, MenuScene, GameScene, LevelCompleteScene, GameOverScene]
+  scene: [BootScene, NameEntryScene, MenuScene, GameScene, LevelCompleteScene, GameOverScene]
 };
 
 // --- BOOT SCENE ---
@@ -156,7 +159,77 @@ BootScene.prototype.create = function() {
   shadeGraphics.generateTexture('shade', 28, 28);
   shadeGraphics.destroy();
 
-  this.scene.start('MenuScene');
+  this.scene.start('NameEntryScene');
+};
+
+// --- NAME ENTRY SCENE ---
+function NameEntryScene() {
+  Phaser.Scene.call(this, { key: 'NameEntryScene' });
+}
+NameEntryScene.prototype = Object.create(Phaser.Scene.prototype);
+NameEntryScene.prototype.constructor = NameEntryScene;
+
+NameEntryScene.prototype.create = function() {
+  const { width, height } = this.cameras.main;
+  this.cameras.main.setBackgroundColor('#1a1a2e');
+
+  this.add.text(width / 2, 120, 'KIRO BUG DODGE', {
+    fontSize: '42px',
+    fontFamily: 'monospace',
+    color: '#9b59b6',
+    fontStyle: 'bold'
+  }).setOrigin(0.5);
+
+  this.add.image(width / 2, 220, 'kiro').setScale(2.5);
+
+  this.add.text(width / 2, 310, 'Enter your name:', {
+    fontSize: '20px',
+    fontFamily: 'monospace',
+    color: '#aaaacc'
+  }).setOrigin(0.5);
+
+  // Name input box (using DOM element)
+  const inputElement = this.add.dom(width / 2, 370).createFromHTML(
+    '<input type="text" id="nameInput" maxlength="15" placeholder="Your name..." ' +
+    'style="font-size:20px; padding:10px 20px; border:2px solid #9b59b6; ' +
+    'border-radius:6px; background:#2a2a4e; color:#ffffff; text-align:center; ' +
+    'font-family:monospace; outline:none; width:250px;">'
+  );
+
+  const goText = this.add.text(width / 2, 450, '[ PRESS ENTER TO PLAY ]', {
+    fontSize: '20px',
+    fontFamily: 'monospace',
+    color: '#00ffcc',
+    fontStyle: 'bold'
+  }).setOrigin(0.5);
+
+  this.tweens.add({
+    targets: goText,
+    alpha: 0.3,
+    duration: 800,
+    yoyo: true,
+    repeat: -1
+  });
+
+  this.add.text(width / 2, 530, 'Other players will appear as ghosts!', {
+    fontSize: '14px',
+    fontFamily: 'monospace',
+    color: '#667788'
+  }).setOrigin(0.5);
+
+  // Listen for Enter key
+  this.input.keyboard.on('keydown-ENTER', () => {
+    const input = document.getElementById('nameInput');
+    const name = (input && input.value.trim()) || 'Ghost';
+    this.registry.set('playerName', name);
+
+    // Connect to Socket.io
+    const socket = io();
+    this.registry.set('socket', socket);
+    socket.emit('playerJoin', name);
+
+    this.scene.start('MenuScene');
+  });
 };
 
 // --- MENU SCENE ---
@@ -511,6 +584,108 @@ GameScene.prototype.create = function() {
       delay: Phaser.Math.Between(0, 3000)
     });
   }
+
+  // --- MULTIPLAYER SETUP ---
+  this.otherPlayers = {};
+  this.playerName = this.registry.get('playerName') || 'Ghost';
+  this.socket = this.registry.get('socket');
+
+  // Show own name above player
+  this.playerLabel = this.add.text(this.player.x, this.player.y - 30, this.playerName, {
+    fontSize: '12px',
+    fontFamily: 'monospace',
+    color: '#ffffff',
+    backgroundColor: '#9b59b6',
+    padding: { x: 4, y: 2 }
+  }).setOrigin(0.5);
+
+  if (this.socket) {
+    // Receive current players already in the game
+    this.socket.on('currentPlayers', (players) => {
+      Object.values(players).forEach(p => {
+        if (p.id !== this.socket.id && p.level === this.currentLevel) {
+          this.addOtherPlayer(p);
+        }
+      });
+    });
+
+    // New player joined
+    this.socket.on('playerJoined', (p) => {
+      if (p.level === this.currentLevel) {
+        this.addOtherPlayer(p);
+      }
+    });
+
+    // Player moved
+    this.socket.on('playerMoved', (p) => {
+      if (p.level === this.currentLevel) {
+        if (!this.otherPlayers[p.id]) {
+          this.addOtherPlayer(p);
+        }
+        const op = this.otherPlayers[p.id];
+        if (op) {
+          op.sprite.x = p.x;
+          op.sprite.y = p.y;
+          op.sprite.setFlipX(p.flipX);
+          op.label.x = p.x;
+          op.label.y = p.y - 30;
+          op.sprite.setAlpha(p.alive ? 0.6 : 0.2);
+        }
+      } else {
+        // Player moved to different level, remove from view
+        this.removeOtherPlayer(p.id);
+      }
+    });
+
+    // Player died
+    this.socket.on('playerDied', (id) => {
+      if (this.otherPlayers[id]) {
+        this.otherPlayers[id].sprite.setAlpha(0.2);
+        this.otherPlayers[id].sprite.setTint(0xff0000);
+      }
+    });
+
+    // Player restarted
+    this.socket.on('playerRestarted', (p) => {
+      this.removeOtherPlayer(p.id);
+    });
+
+    // Player left
+    this.socket.on('playerLeft', (id) => {
+      this.removeOtherPlayer(id);
+    });
+
+    // Player changed level
+    this.socket.on('playerLevelChanged', (data) => {
+      if (data.level !== this.currentLevel) {
+        this.removeOtherPlayer(data.id);
+      }
+    });
+
+    // Notify server of our level
+    this.socket.emit('playerLevelChange', this.currentLevel);
+  }
+};
+
+GameScene.prototype.addOtherPlayer = function(p) {
+  if (this.otherPlayers[p.id]) return;
+  const sprite = this.add.image(p.x, p.y, 'kiro').setAlpha(0.6).setFlipX(p.flipX);
+  const label = this.add.text(p.x, p.y - 30, p.name, {
+    fontSize: '11px',
+    fontFamily: 'monospace',
+    color: '#ffffff',
+    backgroundColor: '#555577',
+    padding: { x: 3, y: 1 }
+  }).setOrigin(0.5).setAlpha(0.8);
+  this.otherPlayers[p.id] = { sprite, label };
+};
+
+GameScene.prototype.removeOtherPlayer = function(id) {
+  if (this.otherPlayers[id]) {
+    this.otherPlayers[id].sprite.destroy();
+    this.otherPlayers[id].label.destroy();
+    delete this.otherPlayers[id];
+  }
 };
 
 GameScene.prototype.update = function() {
@@ -577,6 +752,23 @@ GameScene.prototype.update = function() {
     this.womanLabel.x = this.woman.x;
     this.womanLabel.y = this.woman.y + 35;
   }
+
+  // Update own name label position
+  if (this.playerLabel) {
+    this.playerLabel.x = this.player.x;
+    this.playerLabel.y = this.player.y - 30;
+  }
+
+  // Broadcast position to other players
+  if (this.socket) {
+    this.socket.emit('playerMove', {
+      x: this.player.x,
+      y: this.player.y,
+      level: this.currentLevel,
+      flipX: this.player.flipX,
+      alive: !this.isGameOver
+    });
+  }
 };
 
 GameScene.prototype.hitBug = function(player, bug) {
@@ -588,6 +780,11 @@ GameScene.prototype.hitBug = function(player, bug) {
   this.cameras.main.shake(300, 0.02);
 
   this.registry.set('finalLevel', this.currentLevel);
+
+  // Notify server of death
+  if (this.socket) {
+    this.socket.emit('playerDied');
+  }
 
   this.time.delayedCall(1200, () => {
     this.scene.start('GameOverScene');
@@ -801,10 +998,14 @@ GameOverScene.prototype.create = function() {
 
   this.input.keyboard.once('keydown-SPACE', () => {
     this.registry.set('currentLevel', 1);
+    const socket = this.registry.get('socket');
+    if (socket) socket.emit('playerRestart');
     this.scene.start('GameScene');
   });
   this.input.keyboard.once('keydown-ENTER', () => {
     this.registry.set('currentLevel', 1);
+    const socket = this.registry.get('socket');
+    if (socket) socket.emit('playerRestart');
     this.scene.start('GameScene');
   });
 };
