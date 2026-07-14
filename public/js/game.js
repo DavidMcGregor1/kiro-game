@@ -160,36 +160,46 @@ BootScene.prototype.create = function() {
   cpGraphics.generateTexture('checkpoint', 40, 40);
   cpGraphics.destroy();
 
-  // Woman sprite ("test") - dark hair, name tag
+  // Stakeholder sprite - corporate man with briefcase
   const womanGraphics = this.make.graphics({ x: 0, y: 0, add: false });
-  // Body/dress
-  womanGraphics.fillStyle(0x2255aa, 1);
-  womanGraphics.fillTriangle(20, 28, 8, 60, 32, 60);
+  // Suit body
+  womanGraphics.fillStyle(0x222222, 1);
+  womanGraphics.fillRect(10, 28, 20, 30);
+  // Suit lapels
+  womanGraphics.fillStyle(0x333333, 1);
+  womanGraphics.fillTriangle(14, 28, 20, 42, 10, 42);
+  womanGraphics.fillTriangle(26, 28, 20, 42, 30, 42);
+  // Tie
+  womanGraphics.fillStyle(0xcc0000, 1);
+  womanGraphics.fillTriangle(18, 28, 22, 28, 20, 44);
   // Arms
-  womanGraphics.lineStyle(3, 0xf5c6a0, 1);
-  womanGraphics.lineBetween(12, 34, 4, 48);
-  womanGraphics.lineBetween(28, 34, 36, 48);
+  womanGraphics.lineStyle(4, 0x222222, 1);
+  womanGraphics.lineBetween(10, 32, 4, 48);
+  womanGraphics.lineBetween(30, 32, 36, 48);
   // Head
   womanGraphics.fillStyle(0xf5c6a0, 1);
   womanGraphics.fillCircle(20, 16, 12);
-  // Dark hair
-  womanGraphics.fillStyle(0x1a1a1a, 1);
-  womanGraphics.fillRoundedRect(9, 4, 22, 16, { tl: 11, tr: 11, bl: 0, br: 0 });
-  womanGraphics.fillRect(8, 10, 4, 12);
-  womanGraphics.fillRect(28, 10, 4, 12);
-  // Eyes
+  // Short hair
+  womanGraphics.fillStyle(0x444444, 1);
+  womanGraphics.fillRoundedRect(9, 4, 22, 12, { tl: 11, tr: 11, bl: 0, br: 0 });
+  // Eyes (stern)
   womanGraphics.fillStyle(0x000000, 1);
-  womanGraphics.fillCircle(16, 17, 2);
-  womanGraphics.fillCircle(24, 17, 2);
-  // Smirk
+  womanGraphics.fillCircle(16, 16, 2);
+  womanGraphics.fillCircle(24, 16, 2);
+  // Frown
   womanGraphics.lineStyle(1.5, 0x000000, 1);
-  womanGraphics.lineBetween(17, 23, 24, 22);
-  // Name tag
-  womanGraphics.fillStyle(0xffffff, 1);
-  womanGraphics.fillRect(10, 30, 20, 10);
-  womanGraphics.fillStyle(0xff0000, 1);
-  womanGraphics.fillRect(10, 30, 20, 3);
-  womanGraphics.generateTexture('woman', 40, 62);
+  womanGraphics.beginPath();
+  womanGraphics.arc(20, 26, 5, 1.1 * Math.PI, 1.9 * Math.PI, false);
+  womanGraphics.strokePath();
+  // Briefcase
+  womanGraphics.fillStyle(0x664400, 1);
+  womanGraphics.fillRoundedRect(32, 44, 14, 10, 2);
+  womanGraphics.fillStyle(0xffcc00, 1);
+  womanGraphics.fillRect(37, 44, 4, 2);
+  womanGraphics.lineStyle(2, 0x664400, 1);
+  womanGraphics.lineBetween(36, 44, 36, 40);
+  womanGraphics.lineBetween(42, 44, 42, 40);
+  womanGraphics.generateTexture('woman', 48, 62);
   womanGraphics.destroy();
 
   // Doubt ball
@@ -664,7 +674,7 @@ GameScene.prototype.create = function() {
     // Woman sprite at top center
     this.woman = this.add.image(400, 40, 'woman').setScale(1.3);
     // Name tag text that follows her
-    this.womanLabel = this.add.text(400, 75, 'Angela & Pranjal', {
+    this.womanLabel = this.add.text(400, 75, 'The Stakeholders', {
       fontSize: '12px',
       fontFamily: 'monospace',
       color: '#ff0000',
