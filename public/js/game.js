@@ -239,7 +239,7 @@ const LEVELS = [
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 750, y: 335 }
   },
-  { // Level 2 - One slow bug, wide platforms
+  { // Level 2 - One very slow bug, wide platforms
     platforms: [
       { x: 180, y: 470, type: 'platform' },
       { x: 400, y: 420, type: 'platform' },
@@ -247,59 +247,52 @@ const LEVELS = [
       { x: 750, y: 310, type: 'platform' }
     ],
     bugs: [
-      { x: 400, y: 380, vx: 50, vy: 0, bounceX: true, rangeX: [330, 470] }
+      { x: 400, y: 380, vx: 40, vy: 0, bounceX: true, rangeX: [330, 470] }
     ],
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 750, y: 265 }
   },
-  { // Level 3 - "test" throws doubt and shade balls
+  { // Level 3 - Two slow bugs, generous platforms
     platforms: [
       { x: 150, y: 470, type: 'platform' },
       { x: 350, y: 420, type: 'platform' },
-      { x: 550, y: 360, type: 'platform' },
-      { x: 720, y: 300, type: 'platform' }
+      { x: 550, y: 370, type: 'platform' },
+      { x: 720, y: 310, type: 'platform' }
+    ],
+    bugs: [
+      { x: 350, y: 380, vx: 45, vy: 0, bounceX: true, rangeX: [280, 420] },
+      { x: 600, y: 330, vx: 40, vy: 0, bounceX: true, rangeX: [540, 680] }
+    ],
+    playerStart: { x: 60, y: 520 },
+    flagPos: { x: 750, y: 265 }
+  },
+  { // Level 4 - Three bugs, still wide platforms
+    platforms: [
+      { x: 150, y: 470, type: 'platform' },
+      { x: 350, y: 410, type: 'platform' },
+      { x: 550, y: 350, type: 'platform' },
+      { x: 400, y: 270, type: 'platform' },
+      { x: 700, y: 290, type: 'platform' }
+    ],
+    bugs: [
+      { x: 350, y: 370, vx: 55, vy: 0, bounceX: true, rangeX: [280, 420] },
+      { x: 550, y: 310, vx: 50, vy: 0, bounceX: true, rangeX: [480, 620] },
+      { x: 400, y: 230, vx: 0, vy: 50, bounceY: true, rangeY: [200, 270] }
+    ],
+    playerStart: { x: 60, y: 520 },
+    flagPos: { x: 730, y: 245 }
+  },
+  { // Level 5 - BOSS: "test" throws doubt and shade balls
+    platforms: [
+      { x: 150, y: 470, type: 'platform' },
+      { x: 350, y: 420, type: 'platform' },
+      { x: 550, y: 370, type: 'platform' },
+      { x: 720, y: 310, type: 'platform' }
     ],
     bugs: [],
     bossLevel: true,
     playerStart: { x: 60, y: 520 },
-    flagPos: { x: 750, y: 255 }
-  },
-  { // Level 4 - Getting harder, smaller platforms, faster bugs
-    platforms: [
-      { x: 120, y: 460, type: 'platform' },
-      { x: 300, y: 400, type: 'platformSmall' },
-      { x: 450, y: 340, type: 'platform' },
-      { x: 300, y: 260, type: 'platformSmall' },
-      { x: 550, y: 200, type: 'platform' },
-      { x: 720, y: 260, type: 'platformSmall' }
-    ],
-    bugs: [
-      { x: 300, y: 360, vx: 100, vy: 0, bounceX: true, rangeX: [240, 360] },
-      { x: 450, y: 300, vx: 0, vy: 80, bounceY: true, rangeY: [260, 340] },
-      { x: 550, y: 160, vx: 100, vy: 0, bounceX: true, rangeX: [490, 620] }
-    ],
-    playerStart: { x: 60, y: 520 },
-    flagPos: { x: 740, y: 215 }
-  },
-  { // Level 5 - Vertical challenge
-    platforms: [
-      { x: 100, y: 480, type: 'platformSmall' },
-      { x: 250, y: 420, type: 'platformSmall' },
-      { x: 400, y: 360, type: 'platformSmall' },
-      { x: 250, y: 280, type: 'platformSmall' },
-      { x: 100, y: 200, type: 'platformSmall' },
-      { x: 300, y: 140, type: 'platform' },
-      { x: 550, y: 180, type: 'platformSmall' },
-      { x: 700, y: 240, type: 'platformSmall' }
-    ],
-    bugs: [
-      { x: 250, y: 380, vx: 110, vy: 0, bounceX: true, rangeX: [190, 310] },
-      { x: 400, y: 320, vx: 0, vy: 100, bounceY: true, rangeY: [280, 360] },
-      { x: 250, y: 240, vx: 130, vy: 0, bounceX: true, rangeX: [180, 320] },
-      { x: 550, y: 140, vx: 90, vy: 0, bounceX: true, rangeX: [480, 620] }
-    ],
-    playerStart: { x: 60, y: 520 },
-    flagPos: { x: 720, y: 195 }
+    flagPos: { x: 750, y: 265 }
   },
   { // Level 6 - Dense bugs
     platforms: [
@@ -410,27 +403,30 @@ GameScene.prototype.create = function() {
   if (this.isBossLevel) {
     // Woman sprite at top center
     this.woman = this.add.image(400, 40, 'woman').setScale(1.3);
-    // Name tag text
-    this.add.text(400, 75, 'test', {
-      fontSize: '10px',
+    // Name tag text that follows her
+    this.womanLabel = this.add.text(400, 75, 'test', {
+      fontSize: '12px',
       fontFamily: 'monospace',
       color: '#ff0000',
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      backgroundColor: '#ffffff',
+      padding: { x: 4, y: 2 }
     }).setOrigin(0.5);
 
-    // Woman moves side to side
+    // Woman moves side to side slowly
     this.tweens.add({
       targets: this.woman,
       x: 650,
-      duration: 2500,
+      duration: 4000,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut'
     });
+    // Label follows via update loop
 
     // Throw balls on a timer
     this.throwTimer = this.time.addEvent({
-      delay: 1200,
+      delay: 1800,
       callback: this.throwBall,
       callbackScope: this,
       loop: true
@@ -556,6 +552,12 @@ GameScene.prototype.update = function() {
       lbl.y = ball.y - 20;
     }
   });
+
+  // Update woman name tag to follow her
+  if (this.isBossLevel && this.woman && this.womanLabel) {
+    this.womanLabel.x = this.woman.x;
+    this.womanLabel.y = this.woman.y + 35;
+  }
 };
 
 GameScene.prototype.hitBug = function(player, bug) {
@@ -592,29 +594,31 @@ GameScene.prototype.throwBall = function() {
 
   const isDoubt = Phaser.Math.Between(0, 1) === 0;
   const texture = isDoubt ? 'doubt' : 'shade';
-  const label = isDoubt ? 'DOUBT' : 'SHADE';
+  const label = isDoubt ? '💭 DOUBT' : '🕶️ SHADE';
 
   const ball = this.projectiles.create(this.woman.x, this.woman.y + 30, texture);
   ball.setBounce(0.4);
   ball.setCollideWorldBounds(true);
 
-  // Aim roughly toward the player with some randomness
+  // Aim roughly toward the player - SLOW speed
   const angle = Phaser.Math.Angle.Between(this.woman.x, this.woman.y, this.player.x, this.player.y);
-  const speed = Phaser.Math.Between(180, 280);
-  ball.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed + 50);
-  ball.setAngularVelocity(Phaser.Math.Between(-300, 300));
+  const speed = Phaser.Math.Between(100, 160);
+  ball.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed + 30);
+  ball.setAngularVelocity(Phaser.Math.Between(-150, 150));
 
-  // Add floating text label on the ball
-  const ballLabel = this.add.text(ball.x, ball.y - 16, label, {
-    fontSize: '9px',
+  // Big obvious floating label on the ball
+  const ballLabel = this.add.text(ball.x, ball.y - 20, label, {
+    fontSize: '14px',
     fontFamily: 'monospace',
-    color: isDoubt ? '#8888bb' : '#666666',
-    fontStyle: 'bold'
+    color: isDoubt ? '#aaaaff' : '#888888',
+    fontStyle: 'bold',
+    backgroundColor: isDoubt ? '#222244' : '#111111',
+    padding: { x: 4, y: 2 }
   }).setOrigin(0.5);
   ball.setData('label', ballLabel);
 
   // Clean up after a while
-  this.time.delayedCall(6000, () => {
+  this.time.delayedCall(8000, () => {
     if (ball && ball.active) {
       const lbl = ball.getData('label');
       if (lbl) lbl.destroy();
