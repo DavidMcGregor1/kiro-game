@@ -556,6 +556,7 @@ GameScene.prototype.create = function() {
   // Start timer on level 1
   if (this.currentLevel === 1) {
     this.registry.set('startTime', Date.now());
+    this.registry.set('checkpointActive', false);
   }
 
   const levelIndex = this.currentLevel - 1;
@@ -596,7 +597,7 @@ GameScene.prototype.create = function() {
   }).setOrigin(0.5);
 
   // Checkpoint (server backup power-up)
-  this.checkpointActivated = false;
+  this.checkpointActivated = this.registry.get('checkpointActive') || false;
   this.levelStartPoint = { x: levelData.playerStart.x, y: levelData.playerStart.y };
   if (levelData.checkpoint) {
     this.checkpointSprite = this.physics.add.staticSprite(levelData.checkpoint.x, levelData.checkpoint.y - 20, 'checkpoint');
@@ -985,17 +986,23 @@ GameScene.prototype.hitBug = function(player, bug) {
   if (this.isGameOver) return;
 
   if (this.checkpointActivated) {
-    // Respawn at start of level - infinite retries
-    this.cameras.main.shake(200, 0.015);
-    player.setPosition(this.levelStartPoint.x, this.levelStartPoint.y);
-    player.setVelocity(0, 0);
-    // Brief invincibility flash
-    this.isGameOver = true;
-    player.setAlpha(0.3);
-    this.time.delayedCall(800, () => {
-      player.setAlpha(1);
-      this.isGameOver = false;
-    });
+    // Respawn at start of current level - infinite retries
+    if (this.currentLevel > 4) {
+      // If past level 4, restart at level 4
+      this.registry.set('currentLevel', 4);
+      this.scene.start('GameScene');
+    } else {
+      this.cameras.main.shake(200, 0.015);
+      player.setPosition(this.levelStartPoint.x, this.levelStartPoint.y);
+      player.setVelocity(0, 0);
+      // Brief invincibility flash
+      this.isGameOver = true;
+      player.setAlpha(0.3);
+      this.time.delayedCall(800, () => {
+        player.setAlpha(1);
+        this.isGameOver = false;
+      });
+    }
     return;
   }
 
@@ -1019,6 +1026,7 @@ GameScene.prototype.hitBug = function(player, bug) {
 GameScene.prototype.activateCheckpoint = function(player, checkpoint) {
   if (this.checkpointActivated) return;
   this.checkpointActivated = true;
+  this.registry.set('checkpointActive', true);
 
   // Remove the sprite and label
   this.tweens.killTweensOf(checkpoint);
