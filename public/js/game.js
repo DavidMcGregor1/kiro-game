@@ -100,14 +100,42 @@ BootScene.prototype.create = function() {
   groundGraphics.generateTexture('ground', 800, 40);
   groundGraphics.destroy();
 
-  // Goal flag texture
+  // PROD goal texture (green server/rocket icon)
   const flagGraphics = this.make.graphics({ x: 0, y: 0, add: false });
-  flagGraphics.fillStyle(0xffffff, 1);
-  flagGraphics.fillRect(2, 0, 4, 50);
+  // Server box
+  flagGraphics.fillStyle(0x00cc66, 1);
+  flagGraphics.fillRoundedRect(2, 10, 36, 40, 4);
   flagGraphics.fillStyle(0x00ff88, 1);
-  flagGraphics.fillTriangle(6, 2, 6, 22, 32, 12);
-  flagGraphics.generateTexture('flag', 34, 50);
+  flagGraphics.fillRoundedRect(6, 14, 28, 10, 2);
+  flagGraphics.fillRoundedRect(6, 28, 28, 10, 2);
+  // Blinking lights
+  flagGraphics.fillStyle(0xffffff, 1);
+  flagGraphics.fillCircle(12, 19, 2);
+  flagGraphics.fillCircle(12, 33, 2);
+  flagGraphics.fillStyle(0x00ff00, 1);
+  flagGraphics.fillCircle(28, 19, 2);
+  flagGraphics.fillCircle(28, 33, 2);
+  // PROD label at top
+  flagGraphics.fillStyle(0x00ff88, 1);
+  flagGraphics.fillRoundedRect(4, 0, 32, 10, 2);
+  flagGraphics.generateTexture('flag', 40, 52);
   flagGraphics.destroy();
+
+  // DEV start marker texture (blue terminal icon)
+  const devGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+  devGraphics.fillStyle(0x3498db, 1);
+  devGraphics.fillRoundedRect(0, 5, 40, 35, 4);
+  devGraphics.fillStyle(0x1a1a2e, 1);
+  devGraphics.fillRoundedRect(3, 8, 34, 29, 3);
+  // Terminal prompt >_
+  devGraphics.fillStyle(0x00ff00, 1);
+  devGraphics.fillTriangle(8, 18, 8, 26, 14, 22);
+  devGraphics.fillRect(16, 24, 12, 2);
+  // DEV label at top
+  devGraphics.fillStyle(0x3498db, 1);
+  devGraphics.fillRoundedRect(4, 0, 32, 10, 2);
+  devGraphics.generateTexture('devMarker', 40, 42);
+  devGraphics.destroy();
 
   // Woman sprite ("test") - dark hair, name tag
   const womanGraphics = this.make.graphics({ x: 0, y: 0, add: false });
@@ -305,7 +333,7 @@ MenuScene.prototype.create = function() {
     ease: 'Sine.easeInOut'
   });
 
-  this.add.text(width / 2, 340, 'Reach the flag at the end of each level!\nAvoid all bugs - ONE HIT = GAME OVER', {
+  this.add.text(width / 2, 340, 'Get Kiro from DEV to PROD!\nAvoid bugs & manager shade - ONE HIT = GAME OVER', {
     fontSize: '16px',
     fontFamily: 'monospace',
     color: '#aaaacc',
@@ -400,7 +428,7 @@ const LEVELS = [
     playerStart: { x: 60, y: 520 },
     flagPos: { x: 730, y: 265 }
   },
-  { // Level 5 - BOSS: "test" throws doubt and shade balls
+  { // Level 5 - BOSS: Managers throw doubt and shade
     platforms: [
       { x: 150, y: 470, type: 'platform' },
       { x: 350, y: 420, type: 'platform' },
@@ -493,8 +521,23 @@ GameScene.prototype.create = function() {
   this.player.setBounce(0.1);
   this.player.setDragX(600);
 
-  // Goal flag
+  // DEV start marker
+  this.add.image(levelData.playerStart.x, levelData.playerStart.y - 30, 'devMarker');
+  this.add.text(levelData.playerStart.x, levelData.playerStart.y - 55, 'DEV', {
+    fontSize: '11px',
+    fontFamily: 'monospace',
+    color: '#3498db',
+    fontStyle: 'bold'
+  }).setOrigin(0.5);
+
+  // PROD goal
   this.flag = this.physics.add.staticSprite(levelData.flagPos.x, levelData.flagPos.y, 'flag');
+  this.add.text(levelData.flagPos.x, levelData.flagPos.y - 32, 'PROD', {
+    fontSize: '11px',
+    fontFamily: 'monospace',
+    color: '#00ff88',
+    fontStyle: 'bold'
+  }).setOrigin(0.5);
 
   // Bugs (patrol patterns)
   this.bugs = this.physics.add.group({ allowGravity: false });
@@ -570,14 +613,14 @@ GameScene.prototype.create = function() {
   this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
   // UI
-  this.add.text(16, 16, 'Level ' + this.currentLevel, {
+  this.add.text(16, 16, 'Sprint ' + this.currentLevel, {
     fontSize: '24px',
     fontFamily: 'monospace',
     color: '#9b59b6',
     fontStyle: 'bold'
   });
 
-  this.add.text(16, 48, 'Reach the flag! One hit = Game Over', {
+  this.add.text(16, 48, 'Get to PROD! Avoid bugs & shade!', {
     fontSize: '12px',
     fontFamily: 'monospace',
     color: '#667788'
@@ -920,7 +963,7 @@ LevelCompleteScene.prototype.create = function() {
   const completedLevel = (this.registry.get('currentLevel') || 2) - 1;
   const nextLevel = completedLevel + 1;
 
-  this.add.text(width / 2, 150, 'LEVEL ' + completedLevel + ' COMPLETE!', {
+  this.add.text(width / 2, 150, 'DEPLOYED TO PROD!', {
     fontSize: '40px',
     fontFamily: 'monospace',
     color: '#00ff88',
@@ -937,7 +980,7 @@ LevelCompleteScene.prototype.create = function() {
     ease: 'Sine.easeInOut'
   });
 
-  this.add.text(width / 2, 380, 'Get ready for Level ' + nextLevel + '...', {
+  this.add.text(width / 2, 380, 'Sprint ' + nextLevel + ' starting...', {
     fontSize: '18px',
     fontFamily: 'monospace',
     color: '#aaaacc'
@@ -994,7 +1037,7 @@ GameOverScene.prototype.create = function() {
   );
   localStorage.setItem('kiro_bestlevel', bestLevel.toString());
 
-  this.add.text(width / 2, 100, 'GAME OVER', {
+  this.add.text(width / 2, 100, 'BUILD FAILED', {
     fontSize: '56px',
     fontFamily: 'monospace',
     color: '#ff4444',
@@ -1010,21 +1053,21 @@ GameOverScene.prototype.create = function() {
     repeat: -1
   });
 
-  this.add.text(width / 2, 320, 'Squashed on Level ' + finalLevel, {
+  this.add.text(width / 2, 320, 'Bug found in Sprint ' + finalLevel, {
     fontSize: '28px',
     fontFamily: 'monospace',
     color: '#ff6666'
   }).setOrigin(0.5);
 
-  this.add.text(width / 2, 370, 'Best: Level ' + bestLevel, {
+  this.add.text(width / 2, 370, 'Best: Sprint ' + bestLevel, {
     fontSize: '20px',
     fontFamily: 'monospace',
     color: '#ffcc00'
   }).setOrigin(0.5);
 
-  const message = finalLevel >= 5 ? 'So close to mastering the bugs!' :
-    finalLevel >= 3 ? 'Getting better!' :
-      'Keep trying, you got this!';
+  const message = finalLevel >= 5 ? 'The managers got you!' :
+    finalLevel >= 3 ? 'Almost made it to prod!' :
+      'Back to the backlog...';
 
   this.add.text(width / 2, 420, message, {
     fontSize: '16px',
